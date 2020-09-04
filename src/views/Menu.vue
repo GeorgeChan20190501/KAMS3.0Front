@@ -14,30 +14,30 @@
           </el-input>
         </el-col>
         <el-col :span="10">
-                <el-button type="primary" @click="addRole()">添加菜单</el-button>
+                <el-button type="primary" @click="addMenu()">添加菜单</el-button>
         </el-col>
       </el-row>
       <div class="h2"></div>
-          <el-table :data="tableData" style="width: 100%" border stripe    size="mini" highlight-current-row :header-cell-style="{fontSize:'14px',color:'black'}" >
+          <el-table row-key="id" :tree-props="{children: 'children'}"  :data="tableData" style="width: 100%" border stripe    size="mini" highlight-current-row :header-cell-style="{fontSize:'14px',color:'black'}" >
                <el-table-column label="#"  type="index"></el-table-column>
-               <el-table-column label="角色ID"  >
+               <el-table-column label="菜单ID"  >
                 <template slot-scope="scope">  
-                  <span style="margin-left: 10px">{{ scope.row.roleId }}</span>
+                  <span style="margin-left: 10px">{{ scope.row.id }}</span>
                 </template>
                </el-table-column>
-              <el-table-column label="角色名称"  prop="roleName"></el-table-column>
-              <el-table-column label="角色描述"  prop="describ"></el-table-column>
+              <el-table-column label="菜单名称"  prop="label"></el-table-column>
+              <el-table-column label="菜单描述"  prop="describ"></el-table-column>
               <el-table-column label="是否启用"  prop="flag"></el-table-column>
               <el-table-column label="创建时间">
                 <template slot-scope="scope">
-                    {{scope.row.createTime | dataFormat}}
+                    {{scope.row.updateTime | dataFormat }}
                 </template>
               </el-table-column>
               <el-table-column label="操作" min-width="150px">
                 <template slot-scope="scope">
                   <el-button size="mini" type="primary" @click="handleEdit(scope.row)">编辑</el-button>
                   <el-button size="mini" type="danger" @click="handleDelete(scope.row)">删除</el-button>
-                  <el-button size="mini" type="success" @click="grant(scope.row)">授权</el-button>
+                  <el-button v-if="scope.row.children!=null" size="mini" type="success" @click="addSubMenu(scope.row)">新增子节点</el-button>
                 </template>
               </el-table-column>
   </el-table> 
@@ -50,61 +50,85 @@
       :total="total">
     </el-pagination>
 
-    <el-dialog  title="添加菜单" :visible.sync="addRoledialogVisible"
-        width="50%" @close="resetaddroleForm">
-          <el-form ref="addroleFormRef" :rules="addroleFormRule" :model="addroleForm" label-width="80px">
-            <el-form-item label="菜单名称" prop="roleName">
-              <el-input v-model="addroleForm.roleName"></el-input>
+    <el-dialog  title="添加菜单" :visible.sync="addMenudialogVisible"
+        width="50%" @close="resetaddMenuForm">
+          <el-form ref="addMenuFormRef" :rules="addMenuFormRule" :model="addMenuForm" label-width="100px">
+            <el-form-item label="菜单ID" prop="id">
+              <el-input v-model="addMenuForm.id"></el-input>
             </el-form-item>
-            <el-form-item label="角色描述" prop="describ">
-              <el-input v-model="addroleForm.describ"></el-input>
+            <el-form-item label="菜单名称" prop="label">
+              <el-input v-model="addMenuForm.label"></el-input>
             </el-form-item>
-            <el-form-item label="父级菜单" prop="describ" width="100%">
-               <el-select v-model="addroleForm.pid" placeholder="请选择活动区域" >
-                <el-option label="系统管理" value="shanghai"></el-option>
-                <el-option label="运维工具" value="beijing"></el-option>
-                <el-option label="运维天地" value="beijing"></el-option>
-              </el-select>
+            
+            <el-form-item label="菜单路由" prop="pageUrl">
+              <el-input v-model="addMenuForm.pageUrl"></el-input>
+            </el-form-item>
+            <el-form-item label="菜单描述" prop="describ">
+              <el-input v-model="addMenuForm.describ"></el-input>
             </el-form-item>
            </el-form>
+
         <span slot="footer" class="dialog-footer">
-          <el-button @click="resetaddroleForm">取 消</el-button>
+          <el-button @click="resetaddMenuForm">取 消</el-button>
           <el-button type="primary" @click="confirm()">确 定</el-button>
         </span>
     </el-dialog>
 
-      <el-dialog  title="修改角色" :visible.sync="updateRoledialogVisible"
+      <el-dialog  title="修改菜单" :visible.sync="updateMenudialogVisible"
         width="50%">
-          <el-form ref="roleFormRef" :model="roleForm" label-width="80px">
-            <el-form-item label="角色ID">
-              <el-input v-model="roleForm.roleId"></el-input>
+          <el-form ref="menuFormRef" :model="menuForm" label-width="80px">
+            <el-form-item label="菜单ID">
+              <el-input v-model="menuForm.id" disabled></el-input>
             </el-form-item>
-            <el-form-item label="角色名称">
-              <el-input v-model="roleForm.roleName"></el-input>
+            <el-form-item label="菜单名称">
+              <el-input v-model="menuForm.label"></el-input>
             </el-form-item>
-            <el-form-item label="角色描述">
-              <el-input v-model="roleForm.describ"></el-input>
+            <el-form-item label="父级ID">
+              <el-input v-model="menuForm.pid"></el-input>
+            </el-form-item>
+            <el-form-item label="菜单描述">
+              <el-input v-model="menuForm.describ"></el-input>
             </el-form-item>
             <el-form-item label="是否启用">
-              <el-input v-model="roleForm.flag"></el-input>
+              <el-input v-model="menuForm.flag"></el-input>
             </el-form-item>
            </el-form>
         <span slot="footer" class="dialog-footer">
-          <el-button @click="updateRoledialogVisible=false">取 消</el-button>
+          <el-button @click="updateMenudialogVisible=false">取 消</el-button>
           <el-button type="primary" @click="confirmUpdate()">确 定</el-button>
         </span>
 </el-dialog>
 
-
-      <el-dialog  title="角色授权" :visible.sync="roleGrantdialogVisible"
+    <el-dialog  title="添加子菜单" :visible.sync="addSubMenudialogVisible"
         width="50%">
-          <tree-transfer :title="title" :from_data='fromData' :to_data='toData' :defaultProps="{label:'label'}"  @addBtn='add' @removeBtn='remove' :mode='mode' height='540px' filter openAll>
-          </tree-transfer>
+          <el-form ref="submenuFormRef" :model="submenuForm" label-width="80px">
+            <el-form-item label="父级ID">
+              <el-input v-model="submenuForm.pid" disabled></el-input>
+            </el-form-item>
+            <el-form-item label="菜单ID">
+              <el-input v-model="submenuForm.id"></el-input>
+            </el-form-item>
+            <el-form-item label="菜单名称">
+              <el-input v-model="submenuForm.label"></el-input>
+            </el-form-item>
+            <el-form-item label="菜单路由">
+              <el-input v-model="submenuForm.pageUrl"></el-input>
+            </el-form-item>
+            <el-form-item label="菜单描述">
+              <el-input v-model="submenuForm.describ"></el-input>
+            </el-form-item>
+            <el-form-item label="是否启用">
+              <el-input v-model="submenuForm.flag"></el-input>
+            </el-form-item>
+           </el-form>
         <span slot="footer" class="dialog-footer">
-          <el-button @click="roleGrantdialogVisible=false">取 消</el-button>
-          <el-button type="primary" @click="confirmGrant()">确 定</el-button>
+          <el-button @click="addSubMenudialogVisible=false">取 消</el-button>
+          <el-button type="primary" @click="confirmadd()">确 定</el-button>
         </span>
-    </el-dialog>
+</el-dialog>
+
+
+ 
   </div>
 
 
@@ -114,15 +138,24 @@
 export default {
   data () {
     return {
-       roleGrantdialogVisible:false,
-       updateRoledialogVisible:false,
-       addRoledialogVisible:false,
+       addSubMenudialogVisible:false,
+       updateMenudialogVisible:false,
+       addMenudialogVisible:false,
        menuList:[],
-       addroleFormRule:{ 
-           roleName:[
-                   { required: true, message: '请输入角色', trigger: 'blur' },
-                    ]                        
-          },
+       addMenuFormRule:{ 
+                  label:[
+                    { required: true, message: '请输入菜单名称', trigger: 'blur' },
+                  ]  ,   
+                   id:[
+                    { required: true, message: '请输入菜单ID', trigger: 'blur' },
+                  ]  ,  
+                   pageUrl:[
+                    { required: true, message: '请输入菜单url', trigger: 'blur' },
+                  ]  ,  
+                   describ:[
+                    { required: true, message: '请输入菜单描述', trigger: 'blur' },
+                  ]                      
+              },
        queryInfo:{
          param:'',
          pageNow:1,
@@ -130,28 +163,35 @@ export default {
        },
        total:10,
        tabletemp:[],
-       roleForm:{
-          
-          roleId:'',
-          roleName:'' ,
+       menuForm:{
+          id:'' ,
+          pid:'' ,
+          label:'' ,
+          describ:'' ,
           flag:'',
-          describ:''
+          
        },
-       addroleForm:{
-          roleName:'' ,
+       submenuForm:{
+          id:'' ,
+          pid:'' ,
+          label:'' ,
+          describ:'' ,
+          flag:'',
+          pageUrl:''
+          
+       },
+       addMenuForm:{
+          id:'' ,
+          pid:'' ,
+          label:'' ,
+          pageUrl:'',
           describ:''  
        },
-       tableData: [],
-       title:['未有权限','已有权限'],  
-       mode: "transfer",  
-       fromData:[],
-       toData:[],
-       curr:{}
-       //{id:10000,pid:'10000',label:'系统管理',children:[{id:10101,pid:'10000',label:'用户管理'}]
+       tableData:[]
     }
   },
   filters:{
-
+    
     dataFormat(val){
        var tempdate = new Date(val)
         var y = tempdate.getFullYear()
@@ -166,13 +206,38 @@ export default {
   },
   created(){  
     this.getList();
-    this.getMenuList();
+    //this.getMenuList();
   },
   mounted(){
-    this.add(this.fromData,this.toData)
+    
   },
   methods:{
-    
+    async confirmadd(){
+          var id = this.submenuForm.pid
+          this.submenuForm.createTime=new Date()
+          this.submenuForm.updateTime=new Date()
+           var updataElement = null
+          this.tabletemp.forEach(element => {
+             if(element.id==id){
+               element.children.push(this.submenuForm)
+               updataElement=element
+             }
+          });
+          console.log('添加后')
+          console.log(this.tabletemp)
+          var {data:res} = await this.$http.put('updateMenu' ,updataElement)
+       
+          this.getList();
+          this.addSubMenudialogVisible=false
+          this.$message.success('新增成功')
+    },
+    addSubMenu(row){
+        this.submenuForm.pid = row.id
+        this.addSubMenudialogVisible=true
+   
+       
+
+    },
     async getMenuList(){
         var {data:res} =await this.$http.get('/menus')
         if(res.err_code!==200){
@@ -201,74 +266,27 @@ export default {
 
 
     },
-    async grant(row){
-      this.roleGrantdialogVisible=true;
-      this.curr = row
-      console.log(row.roleId)
-      console.log(row.roleName)
-      //查询已有值
-      //var r = {id:10000,pid:'10000',label:'系统管理',children:[{id:10101,pid:'10000',label:'用户管理'}]}
-      //this.toData=[{id:10000,pid:'10000',label:'系统管理',children:[{id:10101,pid:'10000',label:'用户管理'}]}] 
-      var {data:res} = await this.$http.get('right' ,{params:row})
-      console.log('huisjklj')
-      console.log(res.data)
-      this.toData=this.toData.push(res.data)
-      var tempObj = []
-      tempObj.push(res.data)
-      tempObj.forEach(element => {
-            var  tempChild={}
-            var children=[]
-            element.children.forEach(child => {
-                tempChild = {id:child.menuId,pid:element.menuId,label:child.menuName}
-                children.push(tempChild)
-            })
-
-
-            var obj = {id:element.menuId,pid:element.menuId,label:element.menuName,children:children}
-            
-
-            this.have.push(obj)
-        });
-
-
-      
-      var r = res
-      
-      this.fromData.forEach(item=>{
-         if(r.id===item.id){
-           console.log('父亲相同')
-           item.children.forEach(child=>{
-             console.log('找左侧孩子')
-             console.log(child)
-             r.children.forEach(rc=>{
-                console.log('已有中比对孩子')
-                console.log(rc)
-               if(child.id==rc.id){
-                 console.log('比对成功,移除')
-                 console.log(child)
-                 item.children.splice(item.children.indexOf(child),1)
-               }
-             })
-              console.log('完成一轮')
-           })
-         }
-      })
+     
+    resetaddMenuForm(){
+      this.$refs.addMenuFormRef.resetFields();
+      this.addMenudialogVisible = false  
     },
-    resetaddroleForm(){
-      this.$refs.addroleFormRef.resetFields();
-      this.addRoledialogVisible = false  
-    },
-     addRole(){
-      this.addRoledialogVisible=true 
+     addMenu(){
+      this.addMenudialogVisible=true 
+
     }, 
-     confirm(){
-      this.$refs.addroleFormRef.validate( async valid=>{
+    async confirm(){
+       console.log('来了也')
+       this.$refs.addMenuFormRef.validate( async valid=>{
         if(!valid){
           return this.$message.error('数据未按要求填写！')
         }
-        var {data:res} = await this.$http.post('addRole' ,this.addroleForm)  
+        console.log('验证完了')
+        this.addMenuForm.pid=this.addMenuForm.id
+        var {data:res} = await this.$http.post('addMenu' ,this.addMenuForm)  
+        console.log(res)
         this.getList();
-        this.addRoledialogVisible = false;
+        this.addMenudialogVisible = false;
         if(res.err_code==200)
         this.$message.success('添加成功')
         if(res.err_code==402)
@@ -279,11 +297,33 @@ export default {
     },
  
     async confirmUpdate(){
-          console.log('tconfirmUpdate')
-          console.log(this.roleForm)
-          var {data:res} = await this.$http.put('updateRole' ,this.roleForm)
+          console.log('新数据为')
+          console.log(this.menuForm)
+          //获取父级
+          console.log('获取父级')
+          console.log("父级ID"+this.menuForm.pid)
+          var updataElement = null
+          this.tabletemp.forEach(element => {
+             if(element.id==this.menuForm.pid){
+               element.children.forEach(child => {
+                  if(child.id==this.menuForm.id){
+                    console.log('要换的是啥？？？')
+                    console.log(child)
+                    child=this.menuForm
+                    child.updateTime = new Date()
+                  }
+               })
+               console.log('父级')
+               console.log(element)
+               updataElement=element
+             }
+          });
+          console.log('最后渲染的外层')
+          console.log(this.tabletemp)
+          var {data:res} = await this.$http.put('updateMenu' ,updataElement)
+       
           this.getList();
-          this.updateRoledialogVisible=false
+          this.updateMenudialogVisible=false
           this.$message.success('更新成功')
     },
      handleDelete(row){
@@ -292,9 +332,23 @@ export default {
           confirmButtonText: '确定',
           cancelButtonText: '取消',
           type: 'warning'
-        }).then(async () => {
-          
-          var {data:res} = await this.$http.delete('deleteRole',{params:row} )
+        }).then(async () => { 
+          if(!row.children){
+                var updataElement = null
+                this.tabletemp.forEach(element => {
+                  if(element.id==row.pid){
+                    element.children.splice(element.children.indexOf(row),1)
+                    updataElement=element 
+                  }
+                });
+                console.log('删除后')
+                console.log(updataElement)
+                var {data:res} = await this.$http.put('updateMenu' ,updataElement)
+                }
+                else{
+                  console.log("说明删父节点")
+                  var {data:res} = await this.$http.delete('deleteMenu',{params:row} )
+                }
           this.getList();
           this.$message.success('删除成功')
           
@@ -309,9 +363,9 @@ export default {
     },
     async handleEdit(row){ 
   
-      this.updateRoledialogVisible=true;
+      this.updateMenudialogVisible=true;
         console.log(row)
-        this.roleForm = row;
+        this.menuForm = row;
     },
     clear(){   
       this.queryInfo.param=''
@@ -321,7 +375,7 @@ export default {
     async getList(){
         console.log('前台参数')
         console.log(this.queryInfo)
-        var {data:res} = await this.$http.get('roles' ,{ params: this.queryInfo})
+        var {data:res} = await this.$http.get('menus' ,{ params: this.queryInfo})
         this.tabletemp=res.data;
         this.total = this.tabletemp.length
         this.setPaginations();
@@ -341,37 +395,9 @@ export default {
 
     setPaginations(){
 				this.tableData = this.tabletemp.slice((this.queryInfo.pageNow-1)*this.queryInfo.pageSize,this.queryInfo.pageNow*this.queryInfo.pageSize)  
-     },
+     }
 
-     handleNodeClick(data) {
-        console.log(data);
-      },
-      // 切换模式 现有树形穿梭框模式transfer 和通讯录模式addressList
-      changeMode() {
-        if (this.mode == "transfer") {
-          this.mode = "addressList";
-        } else {
-          this.mode = "transfer";
-        }
-      },
-      // 监听穿梭框组件添加
-      add(fromData,toData,obj){
-        // 树形穿梭框模式transfer时，返回参数为左侧树移动后数据、右侧树移动后数据、移动的{keys,nodes,halfKeys,halfNodes}对象
-        // 通讯录模式addressList时，返回参数为右侧收件人列表、右侧抄送人列表、右侧密送人列表
-        console.log("fromData:", fromData);
-        console.log("toData:", toData);
-        console.log(toData);
-        console.log("obj:", obj);
-      },
-      // 监听穿梭框组件移除
-      remove(fromData,toData,obj){
-        // 树形穿梭框模式transfer时，返回参数为左侧树移动后数据、右侧树移动后数据、移动的{keys,nodes,halfKeys,halfNodes}对象
-        // 通讯录模式addressList时，返回参数为右侧收件人列表、右侧抄送人列表、右侧密送人列表
-        console.log("fromData:", fromData);
-        console.log("toData:", toData);
-        console.log(toData);
-        console.log("obj:", obj);
-      }
+     
 
 
 

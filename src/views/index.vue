@@ -1,6 +1,8 @@
 <template>
   <el-container>
+    
     <el-header>
+       
         <el-row>
         <el-col :xs="16" :sm="18" :md="20" :lg="21" :xl='22'>
         <div class="img">
@@ -21,13 +23,16 @@
     </el-header>
     <el-container>
         
-        <el-aside :width="isCollapse?'64px':'200px'" :style="{background:bgcolor}">
-
-          <el-row class="aaa" >
+        <el-aside :width="isCollapse?'64px':'200px'" :style="{background:bgcolor}"  class="c-search-table beauty-Scroll">
+  
+          <el-scrollbar>
+          <el-row class="aaa" style="position:relative;top:0;text-align:center;z-index:1">
             <el-col :span="20" v-show="isCollapse?false:true"><span >系统导航</span></el-col>
             <el-col :span="2" v-show="isCollapse?false:true"><el-button type="text"  @click="ssss" icon="el-icon-d-arrow-left" style="color:white"></el-button></el-col>
             <el-col :span="24" v-show="isCollapse?true:false"><el-button type="text" @click="ssss" icon="el-icon-d-arrow-right" style="color:white"></el-button></el-col>
           </el-row >
+ 
+           
            <el-menu  default-active="1" router :collapse="isCollapse" :collapse-transition="false" unique-opened>
               <el-submenu :index="item.pageUrl+''" v-for="item in menuList" :key="item.pageUrl">
                 <template slot="title">
@@ -42,9 +47,13 @@
                     </el-menu-item>
               </el-submenu>
            </el-menu>
+           </el-scrollbar>
+          
            <div class="aaa" style="position:fixed;bottom:0;width:200px;text-align:center" v-show="isCollapse?false:true">
               <el-button type="text" style="color:white;font-size:10px;text-align:center"> Copyright © 2020 KAMS版权所有</el-button>
            </div > 
+           
+          
         </el-aside>
        
         <el-main>
@@ -92,7 +101,8 @@ export default {
        classObj:{
           10000:'el-icon-setting',
           20000:'el-icon-help',
-          30000:'el-icon-coordinate'
+          30000:'el-icon-coordinate',
+          40000:'el-icon-goods'
        },
        menuList:[],
        isCollapse:false,
@@ -148,11 +158,16 @@ export default {
         }
       },
      async getMenuList(){
-        var {data:res} =await this.$http.get('/menus',{params:{account:localStorage.getItem('account')}})
+        var {data:res1} =await this.$http.get('/getUserGroup',{params:{account:localStorage.getItem('account')}})
+        console.log("===========")
+        console.log(res1.data.roleName)
+        var {data:res} =await this.$http.get('/getmenusByUser',{params:res1.data})
         if(res.err_code!==200){
           return this.$message.error('获取菜单失败')
         }
-        this.menuList = res.data
+        console.log("===========回来了===")
+        console.log(res.data.right)
+        this.menuList = res.data.right
      },
      ssss(){
        this.isCollapse=!this.isCollapse
@@ -177,6 +192,7 @@ export default {
    .el-container{
      height: 100%;
    } 
+    
    
     .el-menu{
       border-right:none
@@ -193,5 +209,17 @@ export default {
 	line-height: 40px;
 	height: 40px;
 }
-  
+.c-search-table{
+   width: 100%;
+   height: calc("100%"); /*这里我用了计算属性*/
+}
+
+
+    .el-scrollbar{
+        height: 100%; /*此处一定要设置高度，不然内层的计算属性不生效*/
+    }
+    .el-scrollbar__wrap {
+        width: calc("100% + 17px"); /*将垂直滚动条挤到可视区域之外*/
+        height: calc("100% + 17px"); /*将水平滚动条挤到可视区域之外*/
+    }
 </style>

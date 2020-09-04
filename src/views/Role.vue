@@ -166,7 +166,8 @@ filters:{
   methods:{
   
     async getMenuList(){
-        var {data:res} =await this.$http.get('/menus')
+        var {data:res} =await this.$http.get('/menus',{ params: {param:''}})
+        
         if(res.err_code!==200){
           return this.$message.error('获取菜单失败')
         }
